@@ -19,8 +19,13 @@ export async function getSearchLinks(browser: puppeteer.Browser) {
   return links;
 }
 
-export async function login(browser: puppeteer.Browser) {
+export async function login(browser: puppeteer.Browser, isMobile = false) {
   const page = await browser.newPage();
+  if (isMobile) {
+    page.setUserAgent(
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25'
+    );
+  }
 
   // Navigate to the login page
   // Ensure username and password are given
@@ -45,25 +50,39 @@ export async function login(browser: puppeteer.Browser) {
   page.close();
 }
 
-export async function runSearch(browser: puppeteer.Browser, text: string) {
+export async function runSearch(
+  browser: puppeteer.Browser,
+  text: string,
+  isMobile = false
+) {
   const searchPage = await browser.newPage();
+  if (isMobile) {
+    searchPage.setUserAgent(
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25'
+    );
+  } else {
+    searchPage.setUserAgent(
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36 Edg/85.0.564.41'
+    );
+  }
 
   await searchPage.goto('https://bing.com/');
+  await searchPage.waitFor(500);
 
   // Check if log in carried over
-  await searchPage.evaluate(async () => {
-    const signInAnchor: HTMLAnchorElement = document.querySelector('#id_l');
-    const loggedInUsername = signInAnchor.textContent;
-    const signedOut = loggedInUsername.toLocaleLowerCase() === 'sign in';
-
-    if (!signedOut) return signedOut;
-
-    // Click sign in if necessary
-    signInAnchor.click();
-
-    // HACK: Wait arbitrary time for cookies to be loaded.
-    return new Promise(resolve => setTimeout(resolve, 1000));
-  });
+  // await searchPage.evaluate(async () => {
+  //   const signInAnchor: HTMLAnchorElement = document.querySelector('#id_l');
+  //   const loggedInUsername = signInAnchor.textContent;
+  //   const signedOut = loggedInUsername.toLocaleLowerCase() === 'sign in';
+  //
+  //   if (!signedOut) return signedOut;
+  //
+  //   // Click sign in if necessary
+  //   signInAnchor.click();
+  //
+  //   // HACK: Wait arbitrary time for cookies to be loaded.
+  //   return new Promise(resolve => setTimeout(resolve, 1000));
+  // });
 
   await searchPage.type('[name="q"]', text, { delay: 26 });
   const formHandle = await searchPage.$('#sb_form');
